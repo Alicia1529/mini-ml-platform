@@ -77,7 +77,8 @@ def run_parallel(
 
 
 if __name__ == "__main__":
-    # ../../.venv/bin/python batch_inference.py
+    # run program: ../../.venv/bin/python batch_inference.py --count 1000 --batch-size 10 --cpus 4 --delay 0.1 --dashboard
+    # get token: ../../.venv/bin/ray get-auth-token
     parser = argparse.ArgumentParser(description="Compare sequential and Ray batch inference")
     parser.add_argument("--count", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=10)
