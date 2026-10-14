@@ -77,4 +77,4 @@
 
 本计划到 Milestone 1 为止。完成这些步骤、你准备好之后，再讨论 Actors、Jobs SDK 和 Serve。
 
-当前进度：已写出关键词判断、分批、顺序执行和 Ray Task，并验证 1,000 条消息的结果一致；下一步模拟每条消息的处理耗时。
+当前进度：练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。实现部分已覆盖 Milestone 1，下一步由你亲自重复实验并解释结果，再决定是否进入 Actors。
