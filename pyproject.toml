@@ -7,7 +7,11 @@ name = "mini-ml-platform"
 version = "0.1.0"
 description = "Learn Ray Tasks through a local batch moderation workload"
 requires-python = ">=3.10"
-dependencies = ["ray==2.59.0"]
+dependencies = [
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "ray[data]==2.59.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
