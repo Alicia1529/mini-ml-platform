@@ -115,3 +115,8 @@ is not silently retried.
 
 Ray also warned that `/tmp` is over 95% full. These small experiments completed,
 but object spilling may fail if future workloads need disk space.
+
+## Milestone 1 completion
+
+On 2026-10-14, the learner confirmed completion of the hands-on verification.
+Milestone 1 is complete; Ray Actors are the next milestone.

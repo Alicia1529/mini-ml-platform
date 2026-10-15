@@ -77,4 +77,4 @@
 
 本计划到 Milestone 1 为止。完成这些步骤、你准备好之后，再讨论 Actors、Jobs SDK 和 Serve。
 
-当前进度：练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。实现部分已覆盖 Milestone 1，下一步由你亲自重复实验并解释结果，再决定是否进入 Actors。
+当前进度：**Milestone 1 已完成（2026-10-14）**。练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。你已确认完成动手验证。下一阶段是 Milestone 2：Ray Actors。

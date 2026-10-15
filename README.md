@@ -1,5 +1,9 @@
 # Mini ML Platform: Milestone 1
 
+**Status: Milestone 1 complete (2026-10-14).** The implementation, tests, local
+Dashboard, and hands-on learning checks have been verified. Milestones 2–4
+(Actors, Jobs/SDK, and Serve) have not started.
+
 A small, local learning project for a software engineer exploring ML infrastructure.
 Generate 1,000 synthetic chat messages, apply a deterministic toy moderation rule,
 and compare sequential Python with Ray Tasks on your Mac. Only Milestone 1 is

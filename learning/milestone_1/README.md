@@ -1,5 +1,7 @@
 # Milestone 1 practice
 
+**Status: Complete.** Hands-on verification was confirmed on 2026-10-14.
+
 This is the small version you built while learning. The repository's `src/` and
 `examples/run_batch_inference.py` contain the more complete reference version.
 From the repository root, enter this directory and use the repository's Python environment:
