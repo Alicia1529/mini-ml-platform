@@ -1,13 +1,12 @@
-# Mini ML Platform: Milestone 1
+# Mini ML Platform
 
-**Status: Milestone 1 complete (2026-10-14).** The implementation, tests, local
-Dashboard, and hands-on learning checks have been verified. Milestones 2–4
-(Actors, Jobs/SDK, and Serve) have not started.
+**Status: Milestones 1 and 2 complete.** Milestone 1 covers Ray Tasks and batch
+inference; Milestone 2 adds stateful Ray Actors and compares the two approaches.
+Ray Jobs, the SDK, and Serve remain future work.
 
 A small, local learning project for a software engineer exploring ML infrastructure.
 Generate 1,000 synthetic chat messages, apply a deterministic toy moderation rule,
-and compare sequential Python with Ray Tasks on your Mac. Only Milestone 1 is
-implemented. Actors, the Jobs SDK, and Serve are future work.
+and compare sequential Python, Ray Tasks, and Ray Actors on your Mac.
 
 **This is a concurrency demonstration, not a realistic ML inference benchmark.**
 `time.sleep()` simulates latency without doing model computation. Its scaling does
@@ -66,7 +65,7 @@ Counts, CPU slots, and batch size must be positive; delay must be finite and
 non-negative. The library also handles empty inputs, though the benchmark CLI
 requires at least one message. `--num-cpus` only affects Ray.
 
-## Read the code in this order
+## Milestone 1: read the Task code in this order
 
 1. `src/mini_ml_platform/moderation.py`: immutable messages/results, seeded data,
    and a pure moderation function. Matching is case-insensitive substring matching
@@ -232,6 +231,56 @@ you observe. Keep the dataset/seed fixed. You own the edits for these experiment
    setting; don't change the retry policy yet. Remove the intentional failure and
    run the tests to restore the baseline.
 
-Bring back your prediction, measurements, and one surprise. Before Milestone 2,
-explain why we submit before waiting, what one CPU slot means, and how batch size
-changes the amount of schedulable work. We stop here until you have experimented.
+Use these experiments to explain why we submit before waiting, what one CPU slot
+means, and how batch size changes the amount of schedulable work.
+
+## Milestone 2: stateful ModelWorker Actors
+
+A `ModelWorker` is a Ray Actor: its constructor runs once, stores a moderation
+callable as `self.model`, and keeps a `batches_processed` counter. Each
+`predict_batch.remote(...)` call processes one batch on that Actor. The same
+Actor can handle later batches without running its constructor again.
+
+Read `learning/milestone_2/actor_basics.py` for the small state exercise, then
+`src/mini_ml_platform/actor_inference.py` for `ModelWorker` and the round-robin
+`run_with_actors` helper. The comparison is in
+`examples/compare_tasks_actors.py`; `tests/test_actor_inference.py` checks that
+two passes through the same Actors produce the expected ordered results and
+update their counters.
+
+From the repository root, run:
+
+```bash
+.venv/bin/python examples/compare_tasks_actors.py
+.venv/bin/python -m pytest -q -m integration tests/test_actor_inference.py
+```
+
+The example uses 100 messages in 10 batches, two Ray CPU slots, and two Actors.
+It runs the same input through three paths and checks that every result matches:
+
+| Path | Simulated model loading | Measured phases |
+| --- | --- | --- |
+| Sequential | Once before all batches | Load + sequential batch processing |
+| Ray Tasks | Once **per batch** (10 times here) | Ray startup + Task execution |
+| Ray Actors | Once **per Actor** (2 times here) | Ray startup + Actor setup + first batch pass |
+
+The Task's per-batch load is a choice made by this example to show the cost of
+repeated initialization; Ray Tasks do not inherently reload models. Here,
+`sleep()` simulates both loading and per-message inference latency. With two
+CPU slots, up to two one-CPU Tasks can run at once. The two one-CPU Actors each
+process about five batches per pass and keep their CPU slots while alive.
+
+The output groups time by path. **Task execution** includes batch submission,
+simulated loads, processing, waiting, and Ray overhead; these overlapping costs
+cannot be read as separate wall-clock times. **Actor setup** includes creating
+both Actors and waiting for their simulated loads. **First batch pass** times
+processing after setup. **Reuse batch pass** repeats the same messages on those
+same Actors, so it excludes Ray startup and model loading. The final Actor
+counters include both passes.
+
+Ray startup is measured once and shown in both Ray breakdowns. Each one-pass
+sum combines its measured phases; the paths run in sequence in one process, so
+these are not independent cold-start runs. For one-off work, compare the startup-
+inclusive sums with the sequential total. For repeated work, compare the Actor
+reuse pass with a new Task pass. Results vary with machine load; this is a
+concurrency exercise rather than a real model benchmark.
