@@ -24,13 +24,17 @@ def test_submit_job_passes_entrypoint_and_working_dir(client_and_jobs):
     submission_id = "test_submission_456"
     jobs.submit_job.return_value = submission_id
 
-    job_id = client.submit_job("scripts/job moderation.py", "/tmp/project", submission_id=submission_id)
+    job_id = client.submit_job(
+        "scripts/job moderation.py", "/tmp/project",
+        submission_id=submission_id, entrypoint_num_cpus=1,
+    )
 
     assert job_id == submission_id
     jobs.submit_job.assert_called_once_with(
         entrypoint="python 'scripts/job moderation.py'",
         runtime_env={"working_dir": "/tmp/project"},
         submission_id=submission_id,
+        entrypoint_num_cpus=1,
     )
 
 
@@ -43,6 +47,7 @@ def test_submit_job_uses_generated_id_by_default(client_and_jobs):
         entrypoint="python job_hello.py",
         runtime_env={"working_dir": "/tmp/project"},
         submission_id=None,
+        entrypoint_num_cpus=None,
     )
 
 

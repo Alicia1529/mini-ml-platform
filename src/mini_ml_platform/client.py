@@ -9,12 +9,19 @@ class MLPlatformClient:
     def __init__(self, address: str = "http://127.0.0.1:8265"):
         self._jobs = JobSubmissionClient(address)
 
-    def submit_job(self, script: str, working_dir: str, submission_id: str | None = None) -> str:
+    def submit_job(
+        self,
+        script: str,
+        working_dir: str,
+        submission_id: str | None = None,
+        entrypoint_num_cpus: float | None = None,
+    ) -> str:
         """Submit a Python script and return its Ray submission ID."""
         return self._jobs.submit_job(
             entrypoint=f"python {quote(script)}",
             runtime_env={"working_dir": working_dir},
             submission_id=submission_id,
+            entrypoint_num_cpus=entrypoint_num_cpus,
         )
 
     def stop_job(self, job_id: str) -> bool:

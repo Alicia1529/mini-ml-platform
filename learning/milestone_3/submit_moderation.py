@@ -1,5 +1,6 @@
 """Submit the moderation script through MLPlatformClient and inspect its result."""
 
+import argparse
 from pathlib import Path
 from time import monotonic, sleep
 
@@ -9,10 +10,16 @@ from mini_ml_platform.client import MLPlatformClient
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Compare Job driver CPU reservations.")
+    parser.add_argument("--entrypoint-cpus", type=int, choices=(0, 1), default=0)
+    args = parser.parse_args()
+
     client = MLPlatformClient()
     working_dir = Path(__file__).resolve().parent
-    job_id = client.submit_job("job_moderation.py", str(working_dir))
-    print(f"Submitted job: {job_id}")
+    job_id = client.submit_job(
+        "job_moderation.py", str(working_dir), entrypoint_num_cpus=args.entrypoint_cpus
+    )
+    print(f"Submitted job: {job_id} (driver CPU reservation: {args.entrypoint_cpus})")
 
     deadline = monotonic() + 60
     while True:
