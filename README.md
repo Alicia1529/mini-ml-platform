@@ -1,8 +1,7 @@
 # Mini ML Platform
 
-**Status: Milestones 1 and 2 complete.** Milestone 1 covers Ray Tasks and batch
-inference; Milestone 2 adds stateful Ray Actors and compares the two approaches.
-Ray Jobs, the SDK, and Serve remain future work.
+**Status: Milestones 1 and 2 complete; Ray Jobs, the SDK, and Serve are learning
+exercises in progress.** The Serve HTTP endpoint can already be run locally.
 
 A small, local learning project for a software engineer exploring ML infrastructure.
 Generate 1,000 synthetic chat messages, apply a deterministic toy moderation rule,
@@ -284,3 +283,32 @@ these are not independent cold-start runs. For one-off work, compare the startup
 inclusive sums with the sequential total. For repeated work, compare the Actor
 reuse pass with a new Task pass. Results vary with machine load; this is a
 concurrency exercise rather than a real model benchmark.
+
+## Milestone 4: Ray Serve HTTP moderation
+
+From the repository root, start Serve in one terminal:
+
+```bash
+uv sync --locked --extra dev
+.venv/bin/serve run mini_ml_platform.serve_moderation:app
+```
+
+In another terminal, send a request and run the live HTTP tests:
+
+```bash
+curl -i http://127.0.0.1:8000/ -H 'Content-Type: application/json' -d '{"text":"SCAM"}'
+SERVE_URL=http://127.0.0.1:8000/ .venv/bin/python -m pytest -q -m serve tests/test_serve_http.py
+```
+
+The response includes `flagged`, `matched_keywords`, and `replica_pid`. The HTTP
+tests check a valid request, a non-string `text`, and malformed JSON. Without
+`SERVE_URL`, these tests skip during an ordinary `pytest` run because they need a
+running server. Stop Serve with Ctrl-C when finished.
+
+Each request simulates 0.2 seconds of inference latency. Serve can autoscale from
+one to two replicas; each replica handles one request at a time. To observe both
+replica PIDs under concurrent requests, run:
+
+```bash
+seq 1 8 | xargs -P 8 -I{} curl -sS http://127.0.0.1:8000/ -H 'Content-Type: application/json' -d '{"text":"SCAM"}'
+```

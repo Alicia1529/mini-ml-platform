@@ -22,4 +22,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["integration: starts real local Ray worker processes"]
+markers = [
+    "integration: starts real local Ray worker processes",
+    "serve: requires a running Ray Serve HTTP endpoint",
+]
