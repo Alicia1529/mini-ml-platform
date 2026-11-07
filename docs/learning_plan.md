@@ -78,3 +78,28 @@
 本计划到 Milestone 1 为止。完成这些步骤、你准备好之后，再讨论 Actors、Jobs SDK 和 Serve。
 
 当前进度：**Milestone 1 已完成（2026-10-14）**。练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。你已确认完成动手验证。下一阶段是 Milestone 2：Ray Actors。
+
+## 后续收尾路线图：10 个小里程碑（2026-11-05）
+
+上面的计划记录了 Milestone 1 的学习过程。现在 Milestone 1（Tasks）和
+Milestone 2（Actors）已完成；Milestone 3（Jobs SDK）的主要方法、mock 测试
+和本地练习已有；Milestone 4（Serve）的 HTTP 接口、输入检查、扩缩容配置
+和运行中服务的 HTTP 测试已有。剩余工作集中在可重复的性能实验、SDK 的
+公开入口与真实集群验证，以及文档收尾。下表的 10 项是**小检查点**，
+不是新增 10 个大型项目阶段。仍按一次一项的节奏进行。
+
+| # | 小里程碑 | 完成标准 |
+| --- | --- | --- |
+| 1 | Serve 压测脚本 | `examples/benchmark_serve.py` 可设置请求数和并发数，报告成功/失败数、总耗时、吞吐量。 |
+| 2 | 延迟分位数 | 同一脚本分别计时每个请求，报告 p50/p99；能解释它们与总耗时的区别。 |
+| 3 | 并发实验 | 固定请求数，比较并发 1、2、8，记录吞吐量和 p50/p99，并解释排队。 |
+| 4 | Replica 实验 | 相同负载下比较最多 1 和 2 个 replica，记录实际 replica 数和结果，然后恢复原配置。 |
+| 5 | 扩缩容复盘 | 观察空闲 1 → 负载下 2 → 空闲 1，记录 scale-up/down 的时间和 Dashboard 证据。 |
+| 6 | Serve HTTP 边界测试 | 为安全文本和缺少 `text` 的请求补测试；运行中服务的测试全部通过。 |
+| 7 | SDK 公开导入 | 支持 `from mini_ml_platform import MLPlatformClient`，并用一个小测试确认。 |
+| 8 | SDK 成功流程 | 用真实本地 Ray 集群演示 submit → status → logs → SUCCEEDED，而不只依赖 mock。 |
+| 9 | SDK 失败与停止流程 | 演示 FAILED 和 STOPPED 的状态、日志与 `stop_job()` 返回值，区分 Job 与 Task 的失败。 |
+| 10 | 文档与最终验收 | README 补 Jobs SDK 的完整运行命令和 Serve 实验结果；检查遗留暂存文件，运行测试并推送最终改动。 |
+
+优先从第 1 项开始。完成每项后记录一次命令、输出和你自己的解释；
+下一项的实现范围可以根据实测结果调整。
