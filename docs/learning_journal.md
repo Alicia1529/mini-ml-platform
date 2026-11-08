@@ -1,5 +1,9 @@
 # Milestone 1 learning journal
 
+> This is the historical Milestone 1 worksheet, including intentionally blank
+> prediction fields. The full project is now complete. Start with the
+> [learning guide](learning_guide.md) for a review of all milestones.
+
 Fill this in yourself. Make a prediction before measuring; disagreement between
 the prediction and observation is useful evidence.
 

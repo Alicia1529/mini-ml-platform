@@ -17,6 +17,76 @@ Measured results and the reasoning behind them are collected in the
 [experiment log](docs/experiment_log.md). It covers Task CPU and batch-size
 experiments, the Task/Actor comparison, and Serve concurrency and replicas.
 
+## What this project demonstrates
+
+| Layer | Implementation | What it teaches |
+| --- | --- | --- |
+| Moderation | Typed messages and deterministic keyword rules | A shared contract and a sequential correctness baseline |
+| Batch execution | Ray Tasks, batching, ordered result collection | Parallel scheduling, resource requests, overhead, exception propagation |
+| Stateful workers | A reusable pool of Ray Actors | Model initialization, persistent state, reuse, resource lifetime |
+| Job submission | A small Python SDK around Ray Jobs | Packaging code, submitting, polling, reading logs, stopping jobs |
+| HTTP serving | Ray Serve with input validation and autoscaling | Request routing, replicas, concurrency, latency and throughput |
+| Verification | Unit, Ray integration, and live HTTP tests | What can be mocked and what needs a real runtime |
+
+```mermaid
+flowchart LR
+    B[Batch script] --> T[Ray Tasks]
+    B --> A[ModelWorker Actors]
+    C[MLPlatformClient] --> J[Ray Jobs API :8265]
+    J --> D[Job driver on cluster]
+    D --> T
+    H[HTTP client / benchmark] --> P[Serve proxy :8000]
+    P --> R[ModerationService replicas]
+    T --> M[Shared moderation rule]
+    A --> M
+    R --> M
+```
+
+The diagram shows different entry paths, not a requirement to run every component
+at once. A Ray cluster provides processes and scheduling resources; Serve is an
+application running on that cluster. Dashboard/Jobs uses port 8265, while the
+moderation HTTP endpoint uses port 8000.
+
+## Read and review
+
+1. **[Learning guide](docs/learning_guide.md):** explanations, code pointers,
+   worked examples, troubleshooting, and questions with answers.
+2. **[Experiment log](docs/experiment_log.md):** actual measurements and their
+   limitations. Use this when asking “what did we observe?”
+3. **[Learning plan](docs/learning_plan.md):** the original progression and ten
+   completed final checkpoints.
+4. **[Milestone 1 journal](docs/learning_journal.md):** historical predictions,
+   measurements, and a worksheet you can reuse.
+
+The original four-milestone learning scope is complete. “Complete” refers to this
+local educational project, not a production ML platform.
+
+## Results at a glance
+
+| Experiment | Recorded result | Lesson |
+| --- | --- | --- |
+| Tasks: 100 messages, 10 batches, 50 ms/message | Execution: 5.831 s with 1 CPU slot; 2.177 s with 4 | More available slots allow overlapping batches |
+| Same Task experiment, 4 CPU slots | Sequential: 5.359 s; Ray startup + execution: 11.432 s | Faster execution does not guarantee a faster cold run |
+| Serve: 20 requests, client concurrency 8 | Median total: 7.861 s with 1 fixed replica; 3.921 s with 2 | More service capacity helped this simulated workload |
+| Serve autoscaling: 100 requests, concurrency 8 | Observed 1 → 2 → 1 replicas | Scaling decisions and replica readiness take time |
+
+These are historical local measurements, not guarantees or results of the current
+autoscaling configuration with fixed replicas. See the [full experiment log](docs/experiment_log.md)
+for repeated trials, latency percentiles, settings, and unresolved overhead.
+
+## Code map
+
+| Path | Responsibility |
+| --- | --- |
+| [`src/mini_ml_platform/moderation.py`](src/mini_ml_platform/moderation.py) | Data classes, synthetic input, moderation rule |
+| [`src/mini_ml_platform/batch_inference.py`](src/mini_ml_platform/batch_inference.py) | Sequential and Task execution |
+| [`src/mini_ml_platform/actor_inference.py`](src/mini_ml_platform/actor_inference.py) | Stateful workers and round-robin batch dispatch |
+| [`src/mini_ml_platform/client.py`](src/mini_ml_platform/client.py) | Public Jobs SDK wrapper |
+| [`src/mini_ml_platform/serve_moderation.py`](src/mini_ml_platform/serve_moderation.py) | HTTP request validation and serving |
+| [`examples/`](examples/) | Runnable comparisons and HTTP benchmark |
+| [`learning/`](learning/) | Incremental exercises and Job lifecycle demonstrations |
+| [`tests/`](tests/) | Automated behavioral checks |
+
 ## Run locally
 
 From this repository's root, use `uv` (already installed on the development Mac):
@@ -126,8 +196,8 @@ system processes beyond your worker tasks.
 
 The task decorator explicitly disables retries for this first exercise, so one
 failed attempt stays visible. Ray supports separate retry policies for system
-failures and application exceptions; we will study those when building job
-lifecycle behavior. [Task fault tolerance](https://docs.ray.io/en/latest/ray-core/fault_tolerance/tasks.html)
+failures and application exceptions; the [failure exercise](learning/milestone_3/ray_retry.py)
+and [learning guide](docs/learning_guide.md#4-jobs-a-program-running-on-a-cluster) show the distinction. [Task fault tolerance](https://docs.ray.io/en/latest/ray-core/fault_tolerance/tasks.html)
 
 ## Interpret the measurements
 
@@ -205,7 +275,7 @@ RAY_AUTH_MODE=token .venv/bin/ray summary tasks --address http://127.0.0.1:8265
 
 ```bash
 .venv/bin/python -m pytest                    # unit tests and real Ray integration tests
-.venv/bin/python -m pytest -m 'not integration' # quick tests without starting a cluster
+.venv/bin/python -m pytest -m 'not integration and not serve' # quick tests without a running service
 .venv/bin/python -m pytest -m integration      # real worker processes, including error propagation
 ```
 
@@ -321,6 +391,25 @@ IDs in the [Dashboard **Jobs** page](http://127.0.0.1:8265/#/jobs). The Job clie
 connects to an existing cluster; running a submission script does not start one.
 When finished, stop the local cluster with `ray stop`.
 
+The SDK can also be used from your own Python program after starting the cluster:
+
+```python
+from pathlib import Path
+from mini_ml_platform import MLPlatformClient
+
+client = MLPlatformClient("http://127.0.0.1:8265")
+job_id = client.submit_job(
+    "job_hello.py",
+    str(Path("learning/milestone_3").resolve()),
+    entrypoint_num_cpus=0,
+)
+print(job_id, client.get_status(job_id))
+```
+
+Run this from the repository root. Submission returns before completion; use
+[`submit_job.py`](learning/milestone_3/submit_job.py) for bounded polling and final
+logs. `entrypoint_num_cpus` reserves resources for the driver, not all its tasks.
+
 ## Milestone 4: Ray Serve HTTP moderation
 
 From the repository root, start Serve in one terminal:
@@ -353,3 +442,43 @@ replica PIDs under concurrent requests, run:
 ```bash
 seq 1 8 | xargs -P 8 -I{} curl -sS http://127.0.0.1:8000/ -H 'Content-Type: application/json' -d '{"text":"SCAM"}'
 ```
+
+
+Measure the running endpoint from another terminal:
+
+```bash
+.venv/bin/python examples/benchmark_serve.py --requests 20 --concurrency 1
+.venv/bin/python examples/benchmark_serve.py --requests 20 --concurrency 8
+```
+
+The benchmark reports successful/failed requests, total wall time, successful
+requests per second, and successful-request p50/p99 latency. The current service
+autoscales, so record actual replica counts before interpreting a comparison.
+
+If the Jobs cluster above is still running, connect Serve explicitly to it
+instead of starting a separate cluster:
+
+```bash
+RAY_ADDRESS=127.0.0.1:6379 RAY_AUTH_MODE=token .venv/bin/serve run mini_ml_platform.serve_moderation:app
+```
+
+Use Ctrl-C in the Serve terminal to stop that run. Use `.venv/bin/ray stop` when
+you intend to stop the entire local cluster, including its other workloads.
+
+## Verification and scope
+
+Recorded final validation on **2026-11-07**: the full suite produced **32 passed,
+5 skipped** without a live Serve endpoint. The **5 HTTP cases also passed** when
+run separately against a running service. These are recorded local results, not
+an automated CI badge. See [testing and evidence](docs/learning_guide.md#7-testing-what-each-layer-proves)
+for the distinction between mocked SDK calls and real Job lifecycle exercises.
+
+This project intentionally uses a substring classifier and simulated delays. It
+has no trained model, GPU inference, persistent application database, production
+authentication layer, cloud deployment, or multi-node validation. Batch execution
+submits all batches eagerly; it is not a bounded streaming pipeline. The SDK is a
+small wrapper, not an exactly-once submission system or a workflow orchestrator.
+
+Possible future extensions are a real model, bounded in-flight batches, packaged
+remote runtime dependencies, and repeatable CI/deployment checks. They are outside
+the completed learning scope.

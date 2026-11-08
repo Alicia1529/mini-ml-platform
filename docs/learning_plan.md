@@ -1,5 +1,9 @@
 # Mini ML Platform：从零动手学习计划
 
+> All ten final checkpoints are complete. For explanations and self-check
+> questions, read the [learning guide](learning_guide.md); for actual measured
+> results, read the [experiment log](experiment_log.md).
+
 目标：你亲手逐步写出并运行 Milestone 1，能解释每个模块为什么存在、Ray 为什么快或慢。
 
 已有完整实现留作参考。学习过程不要求先读完现有源码，也不把“运行完整 demo”当作掌握项目。

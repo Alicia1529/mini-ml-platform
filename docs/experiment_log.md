@@ -1,5 +1,9 @@
 # Experiment log: results and what they taught us
 
+For explanations of the concepts behind these results and questions to test
+your understanding, see the [learning guide](learning_guide.md). The
+[README](../README.md) provides runnable entry points and a project overview.
+
 This is a record of **observations**, not performance promises. All timings are
 wall-clock measurements on the local Mac. The moderation rule is deterministic;
 `sleep()` simulates work, so these results show scheduling and HTTP behavior, not
