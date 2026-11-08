@@ -30,22 +30,24 @@ experiments, the Task/Actor comparison, and Serve concurrency and replicas.
 
 ```mermaid
 flowchart LR
-    B[Batch script] --> T[Ray Tasks]
-    B --> A[ModelWorker Actors]
-    C[MLPlatformClient] --> J[Ray Jobs API :8265]
-    J --> D[Job driver on cluster]
+    B[Batch script] --> T[Tasks]
+    B --> A[Actors]
+    C[SDK client] --> J[Jobs API]
+    J --> D[Job driver]
     D --> T
-    H[HTTP client / benchmark] --> P[Serve proxy :8000]
-    P --> R[ModerationService replicas]
-    T --> M[Shared moderation rule]
+    H[HTTP client] --> P[Serve proxy]
+    P --> R[Replicas]
+    T --> M[Moderation rule]
     A --> M
     R --> M
 ```
 
 The diagram shows different entry paths, not a requirement to run every component
-at once. A Ray cluster provides processes and scheduling resources; Serve is an
-application running on that cluster. Dashboard/Jobs uses port 8265, while the
-moderation HTTP endpoint uses port 8000.
+at once. "SDK client" is `MLPlatformClient`; "Actors" are `ModelWorker`
+instances; "Replicas" are `ModerationService` instances. A Ray cluster provides
+processes and scheduling resources; Serve is an application running on that
+cluster. The Jobs API uses port 8265, while the Serve proxy exposes the
+moderation HTTP endpoint on port 8000.
 
 ## Read and review
 
