@@ -21,7 +21,9 @@ def serve_url():
     ("payload", "expected_status", "expected_body"),
     [
         ('{"text":"SCAM"}', 200, {"flagged": True, "matched_keywords": ["scam"]}),
+        ('{"text":"hello"}', 200, {"flagged": False, "matched_keywords": []}),
         ('{"text":123}', 400, {"error": "text must be a string"}),
+        ('{}', 400, {"error": "text must be a string"}),
         ('{"text":', 400, {"error": "invalid JSON"}),
     ],
 )

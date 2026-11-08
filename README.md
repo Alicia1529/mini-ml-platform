@@ -1,7 +1,8 @@
 # Mini ML Platform
 
-**Status: Milestones 1 and 2 complete; Ray Jobs, the SDK, and Serve are learning
-exercises in progress.** The Serve HTTP endpoint can already be run locally.
+**Status: local learning project complete across Ray Tasks, Actors, Jobs SDK,
+and Serve.** The Jobs lifecycle and Serve HTTP endpoint have been verified on a
+local Ray cluster.
 
 A small, local learning project for a software engineer exploring ML infrastructure.
 Generate 1,000 synthetic chat messages, apply a deterministic toy moderation rule,
@@ -11,6 +12,10 @@ and compare sequential Python, Ray Tasks, and Ray Actors on your Mac.
 `time.sleep()` simulates latency without doing model computation. Its scaling does
 not predict CPU/GPU inference performance, and the keyword rules are not suitable
 for real content moderation. There are no external moderation calls.
+
+Measured results and the reasoning behind them are collected in the
+[experiment log](docs/experiment_log.md). It covers Task CPU and batch-size
+experiments, the Task/Actor comparison, and Serve concurrency and replicas.
 
 ## Run locally
 
@@ -179,8 +184,8 @@ local development; no authentication settings need to be changed.
 Under **Jobs**, select this driver and inspect its tasks; look for
 `moderate_batch_task`, pending/running/finished states, durations, worker IDs, and
 logs. Under **Cluster**, inspect workers and resource usage. Task state reporting
-can lag briefly. The UI's Jobs view also includes ordinary Python drivers; this
-project has not implemented Ray Jobs submission.
+can lag briefly. The UI's Jobs view also includes ordinary Python drivers and
+Jobs submitted through the Ray Jobs SDK (see Milestone 3 below).
 
 The script waits for Enter after a successful run, keeping the dashboard alive.
 Press Enter to shut down, or Ctrl-C to interrupt and clean up. In a noninteractive
@@ -284,6 +289,38 @@ inclusive sums with the sequential total. For repeated work, compare the Actor
 reuse pass with a new Task pass. Results vary with machine load; this is a
 concurrency exercise rather than a real model benchmark.
 
+## Milestone 3: Ray Jobs SDK
+
+From the repository root, install the dashboard dependencies and start one local
+Ray cluster (assuming no other local cluster is running). The virtual environment
+must be on `PATH` because submitted Job entrypoints run `python` inside the cluster:
+
+```bash
+uv sync --locked --extra dev --extra dashboard
+export PATH="$PWD/.venv/bin:$PATH"
+export RAY_AUTH_MODE=token
+ray start --head --port=6379 --num-cpus=4 --dashboard-host=127.0.0.1 --dashboard-port=8265
+ray list nodes --address http://127.0.0.1:8265
+```
+
+Run three Job lifecycle examples against that cluster:
+
+```bash
+python learning/milestone_3/submit_job.py
+python learning/milestone_3/submit_failure.py
+python learning/milestone_3/stop_agent_demo.py
+```
+
+The first submits `job_hello.py`, polls until `SUCCEEDED`, and prints
+`hello from a Ray Job` from its logs. The second submits `ray_retry.py`: its
+task raises `ValueError`, which reaches the Job driver at `ray.get()` and makes
+the Job `FAILED`. The third submits `job_slow.py`, calls `stop_job()` after
+15 seconds, and confirms `STOPPED`; termination traces in its logs are expected.
+Each script prints its submission ID and status changes. You can inspect those
+IDs in the [Dashboard **Jobs** page](http://127.0.0.1:8265/#/jobs). The Job client
+connects to an existing cluster; running a submission script does not start one.
+When finished, stop the local cluster with `ray stop`.
+
 ## Milestone 4: Ray Serve HTTP moderation
 
 From the repository root, start Serve in one terminal:
@@ -301,9 +338,13 @@ SERVE_URL=http://127.0.0.1:8000/ .venv/bin/python -m pytest -q -m serve tests/te
 ```
 
 The response includes `flagged`, `matched_keywords`, and `replica_pid`. The HTTP
-tests check a valid request, a non-string `text`, and malformed JSON. Without
-`SERVE_URL`, these tests skip during an ordinary `pytest` run because they need a
-running server. Stop Serve with Ctrl-C when finished.
+tests check flagged and safe text, a non-string or missing `text`, and malformed
+JSON. Without `SERVE_URL`, these tests skip during an ordinary `pytest` run
+because they need a running server. Stop Serve with Ctrl-C when finished.
+
+The [experiment log](docs/experiment_log.md#one-versus-two-fixed-replicas-same-client-load)
+records the measured one- versus two-replica comparison, including total time,
+throughput, p50, and p99. It also records the 1 → 2 → 1 autoscaling observation.
 
 Each request simulates 0.2 seconds of inference latency. Serve can autoscale from
 one to two replicas; each replica handles one request at a time. To observe both

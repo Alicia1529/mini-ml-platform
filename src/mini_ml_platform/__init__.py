@@ -1,1 +1,3 @@
-"""Milestone 1: local batch inference with Ray Tasks."""
+"""Public imports for the mini ML platform package."""
+
+from .client import MLPlatformClient

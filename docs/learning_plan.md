@@ -75,9 +75,9 @@
 - 你能在 Dashboard 中定位自己提交的任务。
 - 你能解释一次观察到的性能差异和一次任务失败。
 
-本计划到 Milestone 1 为止。完成这些步骤、你准备好之后，再讨论 Actors、Jobs SDK 和 Serve。
+上面的原始计划到 Milestone 1 为止；后续 Actors、Jobs SDK 和 Serve 的收尾计划见下文。
 
-当前进度：**Milestone 1 已完成（2026-10-14）**。练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。你已确认完成动手验证。下一阶段是 Milestone 2：Ray Actors。
+历史进度：**Milestone 1 于 2026-10-14 完成**。练习版已有延迟、CLI、吞吐量、自动测试和可观察的 Dashboard；CPU、batch size、失败实验的实测记录见 `docs/learning_journal.md`。随后完成了 Milestone 2：Ray Actors。
 
 ## 后续收尾路线图：10 个小里程碑（2026-11-05）
 
@@ -101,5 +101,31 @@ Milestone 2（Actors）已完成；Milestone 3（Jobs SDK）的主要方法、mo
 | 9 | SDK 失败与停止流程 | 演示 FAILED 和 STOPPED 的状态、日志与 `stop_job()` 返回值，区分 Job 与 Task 的失败。 |
 | 10 | 文档与最终验收 | README 补 Jobs SDK 的完整运行命令和 Serve 实验结果；检查遗留暂存文件，运行测试并推送最终改动。 |
 
-优先从第 1 项开始。完成每项后记录一次命令、输出和你自己的解释；
-下一项的实现范围可以根据实测结果调整。
+### 第 7 项为什么要改 `__init__.py`
+
+不改也能从其他文件导入 Client：
+
+```python
+from mini_ml_platform.client import MLPlatformClient
+```
+
+这里的 `client` 是包内的模块名，不是要在 import 中写磁盘路径
+`src/mini_ml_platform/client.py`；项目安装到 `.venv` 后，其他文件也能
+这样导入。第 7 项在 [`src/mini_ml_platform/__init__.py`](../src/mini_ml_platform/__init__.py)
+中添加 `from .client import MLPlatformClient`，把这个类公开在包的顶层，
+于是调用者可以写更短的：
+
+```python
+from mini_ml_platform import MLPlatformClient
+```
+
+这一步改变的是对外导入方式，不是 Client 的功能，也不是让项目第一次变得
+可导入。只有想公开在包顶层的类或函数才需要这样导出；其他对象仍可通过
+`mini_ml_platform.模块名` 导入。
+
+进度（2026-11-07）：**以上 10 个检查点均已完成**。第 1–5 项的 Serve
+实验、第 8 项的 Jobs 成功流程和第 9 项的 `FAILED`/`STOPPED` 对比都记录在
+[`experiment_log.md`](experiment_log.md)。第 6 项的 Serve HTTP 边界测试与
+第 7 项的 SDK 公开导入测试已补齐。第 10 项更新了 README，并完成最终验证：
+完整测试套件 **32 passed、5 skipped**（需运行中 Serve 的 HTTP 测试）；
+启动本地 Serve 后，这 **5 个 HTTP 测试全部通过**。

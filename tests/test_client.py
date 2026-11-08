@@ -5,7 +5,11 @@ from unittest.mock import Mock, call
 import pytest
 from ray.job_submission import JobStatus, JobSubmissionClient
 
-from mini_ml_platform import client as client_module
+from mini_ml_platform import MLPlatformClient, client as client_module
+
+
+def test_client_is_available_at_package_root():
+    assert MLPlatformClient is client_module.MLPlatformClient
 
 
 @pytest.fixture

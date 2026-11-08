@@ -5,7 +5,7 @@ from time import monotonic, sleep
 
 from ray.job_submission import JobStatus
 
-from mini_ml_platform.client import MLPlatformClient
+from mini_ml_platform import MLPlatformClient
 
 
 def main() -> None:
